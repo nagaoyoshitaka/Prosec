@@ -66,7 +66,7 @@ class BloomFilter:
                 return 0
         return 1
 
-def LDP(BloomFilter,f,q,p):
+def LDP(BloomFilter,f,q,p,isDisplay = False):
     #step2 (in the paper)
     subBF= BloomFilter.BF.copy()
     for i in range(BloomFilter.m):
@@ -84,13 +84,14 @@ def LDP(BloomFilter,f,q,p):
             S[i] = mCoin(q)
         else:
             S[i] = mCoin(p)
-    #display each sets
-    fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(10,5))
-    showSomeSet("Bloom FIlter", BloomFilter.BF,ax1)
-    showSomeSet("Bloom Filter'",subBF ,ax2)
-    showSomeSet("LDP",S ,ax3)
-    fig.show
-    fig.savefig("output/LDP.png")
+    if isDisplay:
+        #display each sets
+        fig, (ax1, ax2, ax3) = plt.subplots(nrows=3, figsize=(10,5))
+        showSomeSet("Bloom FIlter", BloomFilter.BF,ax1)
+        showSomeSet("Bloom Filter'",subBF ,ax2)
+        showSomeSet("LDP",S ,ax3)
+        fig.show
+        fig.savefig("output/LDP.png")
     return S 
 
 #display someset by using a bar graph
@@ -103,3 +104,27 @@ def BFtest(BF, checkItems):
     for item in checkItems:
         BF.checkBF(item) 
     
+#Sample Program
+if __name__ == "__main__":
+    #Parameter Setting
+    k = 10
+    m = 100
+    salts = [str(i) for i in range(k)]
+    """
+    f: a probability for randamization (keep almost the original BF)
+    q: randomization of 1s in BF (q=1 -> keep 1, q=0 -> reversed to 0)
+    p: randomization of 1s in BF (p=1 -> reversed to 1, p=0 -> keep 0)
+    """
+    f = 0.1
+    q = 0.8
+    p = 0.2
+    #Construction BF
+    BF = BloomFilter(k,m,salts)
+    BF.setBF("a") 
+    S = LDP(BF,f,q,p,True)
+    print("---LDP Protocol's output---")
+    #If you want to use LDP's output, use the following S:
+    #show a raw LDP output
+    print(S)
+    #show a LDP output in one string
+    print("".join(list(map(str,S))))
