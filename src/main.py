@@ -7,17 +7,18 @@ def ConnectParams(f,q,p):
     return "f=" + str(f) + ",q=" + str(q) + ",p=" + str(p)
 
 #Parameter Setting
-k = 10
-m = 100
+k = 10 #k=1,10,50
+m = 100 #m=[100,1000,10000]
+#todo: set the size of BF according to each attributes.
 salts = [str(i) for i in range(k)]
 """
 f: a probability for randamization (keep almost the original BF)
 q: randomization of 1s in BF (q=1 -> keep 1, q=0 -> reversed to 0)
 p: randomization of 1s in BF (p=1 -> reversed to 1, p=0 -> keep 0)
 """
-f = 0.1
-q = 0.9
-p = 0.1
+f = 0.1 #f=[0,0.1,0.3]
+q = 0.9 #q=[1,0.9,0.7]
+p = 0.1 #r=[0,0.1,0.3]
 skipindex = [1]
 openfile = r"data/wdbc.csv"
 createfile = r"data/LDPfile(" + ConnectParams(f,q,p) + ").csv" 
@@ -49,4 +50,6 @@ with open(createfile, 'w',newline="") as file:
     writer.writerows(LDPset)
 
 #Step3: Analyze a csv made by LDP's output
+#createfile: the location of an output of LDP
+#analyzefile: the location of analysis output
 Analyze.Analyze(createfile,analyzefile)
