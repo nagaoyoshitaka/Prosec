@@ -4,6 +4,7 @@ import pandas as pd
 import array
 import csv
 import random
+
 # 図やグラフを図示するためのライブラリをインポートする。
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -11,6 +12,8 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 
 #主成分分析後の次元
 k = 15
@@ -28,7 +31,7 @@ label = ['ID',
          'mean concave points',
          'mean symmetry',
          'mean fractal dimension',
-
+         
          'radius SE',
          'texture SE', 
          'perimeter SE',
@@ -39,7 +42,7 @@ label = ['ID',
          'concave points',
          'symmetry SE',
          'fractal dimension SE',
-
+         
          'worst radius',
          'worst texture', 
          'worst perimeter',
@@ -52,33 +55,21 @@ label = ['ID',
          'worst fractal dimension']
 
 
-def Analyze(inputfilename,outputfilename):
+def Analyze(inputfilename,outputfilename,outputglaphname):
 #データのロード
     with open(inputfilename) as f:
         reader = csv.reader(f)
         l = [row for row in reader]
-
-    #データの分割
-
-    #ID = [int(row[0])for row in l ]
-    #random.shuffle(ID)
-    #randomID = list(np.array_split(ID,k))
-    #sorted_ID = []
-    #for i in randomID:
-    #    a= np.sort(i)
-    #    sorted_ID.append(a.tolist())
-
-    #np.savetxt('crossd_ID.csv',sorted_ID,delimiter =",",fmt ='% s')
-    #with open('crossd_ID.csv') as f:
-    #    reader =  csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
-    #    crossd_ID = [[int(v) for v in row]for row in reader]
-
-
+        
+        
     #主成分分析
     df = pd.read_csv(inputfilename,names =label)
     dfID = df.iloc[:,:2]
     dfID = dfID.to_numpy()
-    dfs = df.iloc[:, 2:].apply(lambda x: (x-x.mean())/x.std(), axis=0)#データの標準化
+    if not "LDP" in inputfilename:
+        dfs = df.iloc[:, 2:].apply(lambda x: (x-x.mean())/x.std(), axis=0)#データの標準化
+    else:
+        dfs = df.iloc[:,2:]
     pca = PCA()
     pca.fit(dfs)
     # 寄与率
@@ -90,7 +81,7 @@ def Analyze(inputfilename,outputfilename):
     plt.xlabel("Number of principal components")
     plt.ylabel("Cumulative contribution rate")
     plt.grid()
-    plt.savefig(r"output/analysis.png")
+    plt.savefig(outputglaphname)
     plt.show()
 
     #次元削減
@@ -101,12 +92,52 @@ def Analyze(inputfilename,outputfilename):
     Y= np.hstack([dfID,np.array(X)])
     #低次元化したものを保存する
     np.savetxt(outputfilename, Y, delimiter =",",fmt ='% s')
-    #with open('d=15_reduction_data.csv') as f:
-    #    reader =  csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
-    #    acoeffs = [[int(v) for v in row]for row in reader]
 
 
+def SVM(inputfilename,IDs):
+    # データのロード
+    with open(inputfilename)as file:
+        reader = csv.reader(file)
+        DATA = []
+        #二列目だけ"M"or"B"なので、"1"と"0"に対応付ける
+        for row in reader:
+            rowData = []
+            for v in row:
+                if v == "M":
+                    rowData.append(float(1))
+                elif v == "B":
+                    rowData.append(float(0))
+                else:
+                    rowData.append(float(v))
+            DATA.append(rowData)
+            
+    with open(IDs)as file:
+        reader = csv.reader(file)
+        crossed_ID = [[int(v) for v in row]for row in reader]
+ 
+    scores = []
+    # 線形SVMのインスタンスを生成
+    model = SVC(kernel='linear', random_state=None)
+    for IDs in crossed_ID:
+    # データの分割  
+        X_train = []#data
+        y_train = []#target
+        X_test = []#data
+        y_test = []#target
+        for data in DATA:
+            if data[0] in IDs:
+                X_test.append(data[2:])
+                y_test.append(data[1])
+            else:
+                X_train.append(data[2:])
+                y_train.append(data[1])
 
-
-
-
+    #モデルの学習
+        model.fit(X_train,y_train)       
+    # テストデータに対する精度
+        pred_test = model.predict(X_test)
+        score = accuracy_score(y_test, pred_test)
+        scores.append(score)
+        
+    ave_score = np.mean(scores)
+    return (ave_score)

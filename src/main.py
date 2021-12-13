@@ -2,13 +2,14 @@ from hashlib import new
 import LDP
 import Analyze
 import csv
+import Split
 
-def ConnectParams(f,q,p):
-    return "f=" + str(f) + ",q=" + str(q) + ",p=" + str(p)
+def ConnectParams(k,m,f,q,p):
+    return "k=" + str(k) + ",m=" + str(m) + "f=" + str(f) + ",q=" + str(q) + ",p=" + str(p)
 
 #Parameter Setting
 k = 10 #k=1,10,50
-m = 100 #m=[100,1000,10000]
+m = 10000 #m=[100,1000,10000]
 #todo: set the size of BF according to each attributes.
 salts = [str(i) for i in range(k)]
 """
@@ -16,13 +17,21 @@ f: a probability for randamization (keep almost the original BF)
 q: randomization of 1s in BF (q=1 -> keep 1, q=0 -> reversed to 0)
 p: randomization of 1s in BF (p=1 -> reversed to 1, p=0 -> keep 0)
 """
-f = 0.1 #f=[0,0.1,0.3]
-q = 0.9 #q=[1,0.9,0.7]
-p = 0.1 #r=[0,0.1,0.3]
-skipindex = [1]
-openfile = r"data/wdbc.csv"
-createfile = r"data/LDPfile(" + ConnectParams(f,q,p) + ").csv" 
-analyzefile = r"data/wdbc(" + ConnectParams(f,q,p) + ").csv"
+f = 0 #f=[0,0.1,0.3]
+q = 1 #q=[1,0.9,0.7]
+p = 0 #r=[0,0.1,0.3]
+skipindex = [0,1]
+openfile = r"../data/wdbc.csv"
+labeledfile = r"../data/Labeledfile(" + ConnectParams(k,m,f,q,p) + ").csv" 
+createfile = r"../data/LDPfile(" + ConnectParams(k,m,f,q,p) + ").csv" 
+analyzefile = r"../data/wdbc(" + ConnectParams(k,m,f,q,p) + ").csv"
+analyzedglaph = r"../output/analysis(" + ConnectParams(k,m,f,q,p) + ").png"
+IDs = r"../data/crossd_ID.csv"
+splitnum = []
+
+#Step1: split all items in csv according to the range of each attribute.
+splitset = Split.getSplitTupleSetForAttributes(openfile,skipindex,5,100)
+Split.makeLabeledFile(openfile,labeledfile,splitset,skipindex)
 
 #Step1: input all items in csv onto a LDP protocol
 with open(openfile) as file:
@@ -52,4 +61,9 @@ with open(createfile, 'w',newline="") as file:
 #Step3: Analyze a csv made by LDP's output
 #createfile: the location of an output of LDP
 #analyzefile: the location of analysis output
-Analyze.Analyze(createfile,analyzefile)
+Analyze.Analyze(createfile,analyzefile,analyzedglaph)
+
+#Step4: Machine Learning without dimension reduction
+#learning result by SVM 
+result = Analyze.SVM(createfile,IDs)
+print(result)
