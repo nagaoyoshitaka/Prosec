@@ -11,7 +11,6 @@ def ConnectParams(k,m,f,q,p):
 #Parameter Setting
 k = 10 #k=1,10,50
 m = 10000 #m=[100,1000,10000]
-#todo: set the size of BF according to each attributes.
 salts = [str(i) for i in range(k)]
 """
 f: a probability for randamization (keep almost the original BF)

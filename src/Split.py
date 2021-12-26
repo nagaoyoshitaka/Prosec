@@ -20,8 +20,6 @@ def getSplitTupleSetForAttributes(filename, skipindex,minnum,maxnum):
                 minset[i] = float(row[i])
             if float(row[i]) > maxset[i]:
                 maxset[i] = float(row[i])
-    print(minset)
-    print(maxset)
     midResult = []
     for i in range(n):
         if i in skipindex:
@@ -83,7 +81,6 @@ def getSplitTupleSetForAttributes2(filename, skipindex,splitnum):
         sortedset = np.sort(attrset[i])
         midSet = []
         for j in range(splitnum):
-            print(sortedset[min(int(l*(j+1)/splitnum),l-1)])
             a = float(sortedset[int(l*j/splitnum)])
             b = float(sortedset[min(int(l*(j+1)/splitnum),l-1)])
             rangetuple = (a,b)
