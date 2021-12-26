@@ -21,8 +21,32 @@ def coin():
     r = random.randint(0,1)
     return r
 
-class BloomFilter:
+
+class ItemBox:
+    """
+    This is the smae as BF which has the following features:
+    1. m (the size of BF) is the number of candicates of inputs
+    2. There are no collisions of hash functions.
+    """
+    def __init__(self, m):
+        self.m = m
+        self.itemBox = [0 for i in range(m)]
     
+    #input an item with an index i onto itembox
+    def setItem(self,i):
+        self.itemBox[i]=1
+        
+    #input items with indices [i_1,...,i_n] onto itembox
+    def manySetItem(self,iset):
+        for i in iset:
+            self.setItem(i)
+        
+    def checkItem(self,i):
+        if self.itemBox[i] != 1:
+            return 0
+        return 1
+
+class BloomFilter:
     """
     Patameters
     k: the number of hash functions
@@ -66,9 +90,13 @@ class BloomFilter:
                 return 0
         return 1
 
-def LDP(BloomFilter,f,q,p,isDisplay = False):
+def LDP(name, BloomFilter,f,q,p,isDisplay = False):
     #step2 (in the paper)
-    subBF= BloomFilter.BF.copy()
+    if name == "BF":
+        subBF= BloomFilter.BF.copy()
+    elif name == "ItemBox":
+        subBF= BloomFilter.itemBox.copy()
+        
     for i in range(BloomFilter.m):
         r = mCoin(f)
         if r == 1:

@@ -3,9 +3,10 @@ import LDP
 import Analyze
 import csv
 import Split
+import numpy as np
 
 def ConnectParams(k,m,f,q,p):
-    return "k=" + str(k) + ",m=" + str(m) + "f=" + str(f) + ",q=" + str(q) + ",p=" + str(p)
+    return "f=" + str(f) + ",q=" + str(q) + ",p=" + str(p)
 
 #Parameter Setting
 k = 10 #k=1,10,50
@@ -17,12 +18,13 @@ f: a probability for randamization (keep almost the original BF)
 q: randomization of 1s in BF (q=1 -> keep 1, q=0 -> reversed to 0)
 p: randomization of 1s in BF (p=1 -> reversed to 1, p=0 -> keep 0)
 """
-f = 0 #f=[0,0.1,0.3]
-q = 1 #q=[1,0.9,0.7]
-p = 0 #r=[0,0.1,0.3]
+f = 0.2 #f=[0,0.1,0.3]
+q = 0.9 #q=[1,0.9,0.7]
+p = 0.1 #r=[0,0.1,0.3]
 skipindex = [0,1]
 openfile = r"../data/wdbc.csv"
 labeledfile = r"../data/Labeledfile(" + ConnectParams(k,m,f,q,p) + ").csv" 
+midfile = r"../data/Midfile(" + ConnectParams(k,m,f,q,p) + ").csv" 
 createfile = r"../data/LDPfile(" + ConnectParams(k,m,f,q,p) + ").csv" 
 analyzefile = r"../data/wdbc(" + ConnectParams(k,m,f,q,p) + ").csv"
 analyzedglaph = r"../output/analysis(" + ConnectParams(k,m,f,q,p) + ").png"
@@ -30,11 +32,23 @@ IDs = r"../data/crossd_ID.csv"
 splitnum = []
 
 #Step1: split all items in csv according to the range of each attribute.
-splitset = Split.getSplitTupleSetForAttributes(openfile,skipindex,5,100)
+    #case1: split according to the same length of the entire range.
+#splitset = Split.getSplitTupleSetForAttributes(openfile,skipindex,5,100)
+    #case2: split according to the same number of attributes.
+splitset, midSet = Split.getSplitTupleSetForAttributes2(openfile,skipindex,5)
+print(splitset)
 Split.makeLabeledFile(openfile,labeledfile,splitset,skipindex)
+splitnum = [len(splitTuple) for splitTuple in splitset]
+
+midSet = np.array(midSet).T.tolist()
+with open(midfile, 'w',newline="") as file:
+    writer = csv.writer(file)
+    writer.writerows(midSet)
 
 #Step1: input all items in csv onto a LDP protocol
-with open(openfile) as file:
+#case1->openfile
+#case2->labeledfile
+with open(labeledfile) as file:
     reader = csv.reader(file)
     rowset = [row for row in reader]
 LDPset = []
@@ -44,10 +58,18 @@ for row in rowset:
         if i in skipindex:
             newrow.append(row[i])
             continue    
-        #Construction BF
-        BF = LDP.BloomFilter(k,m,salts)
-        BF.setBF(str(row[i])) 
-        S = LDP.LDP(BF,f,q,p)
+        """
+        #case1: construction BF
+        ItemSet = LDP.BloomFilter(k,m,salts)
+        ItemSet.setBF(str(row[i])) 
+        """
+        
+        #case2: construction ItemBox
+        ItemSet = LDP.ItemBox(splitnum[i])
+        ItemSet.setItem(int(row[i])) 
+        
+        
+        S = LDP.LDP("ItemBox",ItemSet,f,q,p)
         #convert a LDP output (array) to one string
         newitem = "".join(list(map(str,S)))
         newrow.append(float(newitem))
@@ -58,6 +80,7 @@ with open(createfile, 'w',newline="") as file:
     writer = csv.writer(file)
     writer.writerows(LDPset)
 
+"""
 #Step3: Analyze a csv made by LDP's output
 #createfile: the location of an output of LDP
 #analyzefile: the location of analysis output
@@ -65,5 +88,6 @@ Analyze.Analyze(createfile,analyzefile,analyzedglaph)
 
 #Step4: Machine Learning without dimension reduction
 #learning result by SVM 
-result = Analyze.SVM(createfile,IDs)
+result = Analyze.SVM(analyzefile,IDs)
 print(result)
+"""
